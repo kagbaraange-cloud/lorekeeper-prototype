@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lorekeeper — Prototype</title>
+  <style>
+    :root {
+      --bg: #0c0d13;
+      --bg-2: #131625;
+      --panel: rgba(18, 20, 32, 0.8);
+      --panel-strong: rgba(22, 25, 42, 0.95);
+      --panel-soft: rgba(31, 34, 52, 0.8);
+      --border: rgba(139, 146, 255, 0.25);
+      --text: #edf2ff;
+      --muted: #a1a7c4;
+      --primary: #8b5cf6;
+      --primary-soft: rgba(139, 92, 246, 0.18);
+      --primary-strong: #a78bfa;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #fb7185;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: radial-gradient(circle at top, #171a2c 0%, #0c0d13 50%, #070910 100%); color: var(--text); font-family: Inter, "Segoe UI", sans-serif; }
+    body {
+      min-height: 100vh;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(167,139,250,.14), transparent 18%),
+        radial-gradient(circle at 80% 10%, rgba(59,130,246,.12), transparent 20%),
+        radial-gradient(circle at 50% 80%, rgba(139,92,246,.12), transparent 24%);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr) 380px;
+      min-height: 100vh;
+      gap: 18px;
+      padding: 18px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .sidebar {
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .brand {
+      padding: 14px 12px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      margin-bottom: 12px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .project-list {
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .project-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid transparent;
+      color: var(--text);
+      padding: 12px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 180ms ease;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .project-item:hover {
+      border-color: rgba(139, 92, 246, 0.35);
+      background: rgba(139, 92, 246, 0.08);
+    }
+
+    .project-item.active {
+      background: linear-gradient(135deg, rgba(139,92,246,.18), rgba(96,165,250,.08));
+      border-color: rgba(167,139,250,.5);
+      box-shadow: inset 0 0 0 1px rgba(167,139,250,.2);
+    }
+
+    .project-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 16px currentColor;
+    }
+
+    .project-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .project-count {
+      color: var(--muted);
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    .new-project-btn {
+      margin-top: auto;
+      background: linear-gradient(135deg, var(--primary), #7c3aed);
+      border: none;
+      color: white;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(139, 92, 246, 0.45);
+      transition: transform 180ms ease;
+    }
+
+    .new-project-btn:hover { transform: translateY(-1px); }
+
+    .editor {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .project-title {
+      font-size: clamp(1.3rem, 2vw, 2rem);
+      font-weight: 800;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      width: 100%;
+      outline: none;
+      padding: 4px 0;
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .secondary-btn, .danger-btn, .ghost-btn, .primary-btn, .tiny-btn {
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 180ms ease;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, rgba(139,92,246,.28), rgba(59,130,246,.18));
+      border-color: rgba(167,139,250,.4);
+      box-shadow: inset 0 0 0 1px rgba(167,139,250,.3);
+    }
+
+    .danger-btn {
+      color: #ffdae2;
+      background: rgba(251, 113, 133, 0.08);
+      border-color: rgba(251, 113, 133, 0.2);
+    }
+
+    .ghost-btn {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .tiny-btn {
+      padding: 7px 9px;
+      font-size: 0.8rem;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .passage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .passage-card {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .passage-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .passage-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .lock-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+      font-size: 0.76rem;
+      user-select: none;
+    }
+
+    .lock-toggle.locked {
+      background: rgba(251, 113, 133, 0.08);
+      border-color: rgba(251, 113, 133, 0.2);
+      color: #ffc7d1;
+    }
+
+    .passage-textarea {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      background: rgba(8,10,18,.5);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 0.96rem;
+      outline: none;
+    }
+
+    .passage-textarea[readonly] {
+      opacity: 0.8;
+      background: rgba(15, 18, 28, 0.6);
+    }
+
+    .side-panel {
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .section {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .section h3 {
+      margin: 0 0 10px;
+      font-size: 0.98rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(167,139,250,.25);
+      color: #e9ddff;
+      font-size: 0.76rem;
+    }
+
+    label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+
+    select, input[type="text"], textarea {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(10,12,18,0.6);
+      border-radius: 10px;
+      color: var(--text);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      margin-top: 10px;
+    }
+
+    .checkbox-row input {
+      accent-color: var(--primary);
+      width: 18px;
+      height: 18px;
+    }
+
+    .transform-output {
+      margin-top: 12px;
+      max-height: 280px;
+      overflow: auto;
+      background: rgba(8,10,18,.6);
+      border: 1px solid rgba(255,255,255,.08);
+      padding: 12px;
+      border-radius: 12px;
+      white-space: pre-wrap;
+      line-height: 1.65;
+      color: #edf2ff;
+    }
+
+    .footer-banner {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52,211,153,.2);
+      color: #d8fff1;
+      font-size: 0.83rem;
+      line-height: 1.5;
+    }
+
+    .privacy-note {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251,191,36,.2);
+      color: #ffe7a8;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1100px) {
+      .app {
+        grid-template-columns: 220px minmax(0, 1fr);
+      }
+      .right-panel { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+      .sidebar, .editor, .side-panel {
+        min-height: auto;
+      }
+      .project-item {
+        padding: 10px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel sidebar">
+      <div class="brand">
+        <h1>Lorekeeper</h1>
+        <small>Gardien du lore</small>
+      </div>
+
+      <div id="project-list" class="project-list"></div>
+
+      <button id="new-project-btn" class="new-project-btn">+ Nouveau projet</button>
+    </aside>
+
+    <main class="panel editor">
+      <div class="topbar">
+        <input id="project-title" class="project-title" type="text" placeholder="Nom du projet" aria-label="Nom du projet" />
+        <div class="tool-row">
+          <button class="ghost-btn" id="add-passage-btn">+ Passage</button>
+          <button class="danger-btn" id="delete-project-btn">Supprimer</button>
+        </div>
+      </div>
+
+      <div id="passage-list" class="passage-list"></div>
+    </main>
+
+    <aside class="panel side-panel right-panel">
+      <div class="section">
+        <h3>Ce que l’IA retient</h3>
+        <div id="ai-memory" class="pill-list"></div>
+      </div>
+
+      <div class="section">
+        <h3>Transformer mon histoire…</h3>
+
+        <form id="transform-form">
+          <div>
+            <label for="transform-format">Format</label>
+            <select id="transform-format">
+              <option value="roman">Roman</option>
+              <option value="film">Scénario de film</option>
+              <option value="serie">Scénario de série</option>
+              <option value="video">Script vidéo</option>
+              <option value="bd">Bande dessinée</option>
+            </select>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label for="transform-vision">Vision / style / ton</label>
+            <textarea id="transform-vision" placeholder="Ex : sombre, intime, perspective du personnage principal, sans ajout de nouveaux lieux."></textarea>
+          </div>
+
+          <div class="checkbox-row">
+            <input id="no-new-elements" type="checkbox" checked />
+            <label for="no-new-elements" style="margin:0; color: var(--text); font-weight: 500;">Aucun ajout de personnages, lieux ou événements</label>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <label for="transform-passage-select">Passages à transformer</label>
+            <select id="transform-passage-select" multiple size="5" style="min-height: 120px;"></select>
+          </div>
+
+          <div style="margin-top: 14px; display:flex; gap:10px;">
+            <button type="button" id="ia-authorize-btn" class="primary-btn">Autoriser l’IA</button>
+            <button type="submit" class="secondary-btn">Générer la version</button>
+          </div>
+        </form>
+
+        <div id="transform-output" class="transform-output">Aucune transformation générée.</div>
+      </div>
+
+      <div class="section">
+        <h3>Confidentialité</h3>
+        <div class="footer-banner">
+          Les données restent sur cet appareil tant que tu le souhaites. Aucun texte n’est utilisé pour entraîner un modèle sans ton consentement explicite.
+        </div>
+        <div class="privacy-note">
+          L’IA ne modifie jamais le texte original. Elle suggère seulement une version séparée à approuver ou refuser.
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "lorekeeper-prototype-v1";
+    const state = {
+      projects: [],
+      activeProjectId: null,
+      iaAuthorized: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function uid(prefix = "id") {
+      return prefix + "-" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function createDefaultProject(title = "Projet 1") {
+      return {
+        id: uid("project"),
+        title,
+        passages: [
+          {
+            id: uid("passage"),
+            text: "Le ciel était encore noir quand Nia ouvrit les yeux dans la forêt de cristal. Le vent portait une odeur de métal et d’orage. Elle savait qu’un héritage l’attendait, mais l’ancienne promesse l’avait déjà oubliée.",
+            locked: false
+          },
+          {
+            id: uid("passage"),
+            text: "Dans le village, les murmures parlaient d’un gardien qui avait disparu au bord du lac. Nia n’osa pas demander plus. Le soleil se levait, et quelque chose de vivant tournait dans son ventre comme une pierre froide.",
+            locked: true
+          }
+        ],
+        aiMemory: [
+          "Univers sombre et mystique",
+          "Forêt de cristal",
+          "Nia, protagoniste",
+          "Lac et héritage oublié"
+        ]
+      };
+    }
+
+    function loadProjects() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length) {
+            state.projects = parsed;
+            state.activeProjectId = parsed[0].id;
+            return;
+          }
+        } catch {}
+      }
+
+      const defaultProject = createDefaultProject();
+      state.projects = [defaultProject];
+      state.activeProjectId = defaultProject.id;
+    }
+
+    function saveProjects() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.projects));
+    }
+
+    function getActiveProject() {
+      return state.projects.find(p => p.id === state.activeProjectId) || null;
+    }
+
+    function updateProjectTitle(title) {
+      const project = getActiveProject();
+      if (!project) return;
+      project.title = title || "Projet sans titre";
+      renderSidebar();
+      saveProjects();
+    }
+
+    function addProject() {
+      const title = `Projet ${state.projects.length + 1}`;
+      const project = createDefaultProject(title);
+      state.projects.unshift(project);
+      state.activeProjectId = project.id;
+      render();
+      saveProjects();
+    }
+
+    function deleteProject() {
+      if (state.projects.length <= 1) return;
+      const project = getActiveProject();
+      const next = state.projects.filter(p => p.id !== project.id);
+      state.projects = next;
+      state.activeProjectId = next[0].id;
+      render();
+      saveProjects();
+    }
+
+    function addPassage() {
+      const project = getActiveProject();
+      if (!project) return;
+
+      project.passages.push({
+        id: uid("passage"),
+        text: "Nouveau passage...\n\nÉcris ici pour commencer une scène, un souvenir ou un indice.",
+        locked: false
+      });
+
+      render();
+      saveProjects();
+    }
+
+    function togglePassageLock(passageId) {
+      const project = getActiveProject();
+      if (!project) return;
+
+      const passage = project.passages.find(p => p.id === passageId);
+      if (!passage) return;
+
+      passage.locked = !passage.locked;
+      updateAiMemory(project);
+      render();
+      saveProjects();
+    }
+
+    function updateAiMemory(project) {
+      const texts = project.passages.map(p => p.text).join(" ");
+      const memory = [];
+      const lower = texts.toLowerCase();
+
+      if (lower.includes("forêt") || lower.includes("lac") || lower.includes("ville")) memory.push("Décors");
+      if (lower.includes("nia") || lower.includes("gardiens") || lower.includes("héritage")) memory.push("Personnages et héritage");
+      if (lower.includes("mystère") || lower.includes("secret") || lower.includes("promesse")) memory.push("Mystère");
+      if (lower.includes("orage") || lower.includes("nuit") || lower.includes("soleil")) memory.push("Ambiance");
+      if (!memory.length) memory.push("Écriture ouverte");
+
+      project.aiMemory = memory.slice(0, 6);
+    }
+
+    function updatePassageText(passageId, value) {
+      const project = getActiveProject();
+      if (!project) return;
+
+      const passage = project.passages.find(p => p.id === passageId);
+      if (!passage) return;
+
+      passage.text = value;
+      updateAiMemory(project);
+      renderSidebar();
+      saveProjects();
+    }
+
+    function renderSidebar() {
+      const list = $("project-list");
+      const project = getActiveProject();
+
+      if (!project) {
+        list.innerHTML = "";
+        return;
+      }
+
+      list.innerHTML = state.projects.map(p => `
+        <button class="project-item ${p.id === project.id ? 'active' : ''}" data-project-id="${p.id}">
+          <div class="project-meta">
+            <span class="dot" style="color:${getColorForProject(p.title)}; background:${getColorForProject(p.title)}"></span>
+            <span class="project-name">${escapeHtml(p.title)}</span>
+          </div>
+          <span class="project-count">${p.passages.length}</span>
+        </button>
+      `).join("");
+
+      list.querySelectorAll(".project-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+          state.activeProjectId = btn.dataset.projectId;
+          render();
+        });
+      });
+    }
+
+    function getColorForProject(title) {
+      const palette = ["#8b5cf6", "#34d399", "#60a5fa", "#fbbf24", "#f472b6", "#fb7185", "#a78bfa"];
+      const index = title.length % palette.length;
+      return palette[index];
+    }
+
+    function renderProjectEditor() {
+      const project = getActiveProject();
+      if (!project) return;
+
+      $("project-title").value = project.title;
+
+      const passages = project.passages;
+      const passageList = $("passage-list");
+      passageList.innerHTML = passages.map((p, index) => `
+        <div class="passage-card">
+          <div class="passage-header">
+            <div class="passage-meta">
+              <span>Passage ${index + 1}</span>
+              ${p.locked ? '<span>• Verrouillé</span>' : '<span>• Ouvert</span>'}
+            </div>
+            <button type="button" class="lock-toggle ${p.locked ? 'locked' : ''}" data-lock-id="${p.id}">
+              ${p.locked ? "🔒 Verrouillé" : "🔓 Ouvert"}
+            </button>
+          </div>
+          <textarea class="passage-textarea" data-textarea-id="${p.id}" ${p.locked ? "readonly" : ""}>${escapeHtml(p.text)}</textarea>
+        </div>
+      `).join("");
+
+      passageList.querySelectorAll(".lock-toggle").forEach(btn => {
+        btn.addEventListener("click", () => togglePassageLock(btn.dataset.lockId));
+      });
+
+      passageList.querySelectorAll(".passage-textarea").forEach(textarea => {
+        textarea.addEventListener("input", (e) => {
+          updatePassageText(e.target.dataset.textareaId, e.target.value);
+        });
+      });
+
+      updateTransformSelect(project);
+      renderAiMemory(project);
+    }
+
+    function renderAiMemory(project) {
+      const list = $("ai-memory");
+      if (!project) return;
+
+      list.innerHTML = (project.aiMemory || []).map(item => `<span class="pill">${escapeHtml(item)}</span>`).join("");
+    }
+
+    function updateTransformSelect(project) {
+      const select = $("transform-passage-select");
+      select.innerHTML = project.passages.map((p, index) => `
+        <option value="${p.id}">Passage ${index + 1}</option>
+      `).join("");
+
+      if (project.passages.length) {
+        const selectedValues = project.passages.slice(0, Math.min(2, project.passages.length)).map(p => p.id);
+        [...select.options].forEach(option => {
+          option.selected = selectedValues.includes(option.value);
+        });
+      }
+    }
+
+    function render() {
+      renderSidebar();
+      renderProjectEditor();
+      $("delete-project-btn").disabled = state.projects.length <= 1;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function generateTransformText(project, options) {
+      const selected = project.passages.filter(p => options.ids.includes(p.id));
+      if (!selected.length) return "Sélectionne au moins un passage pour créer une version transformée.";
+
+      const content = selected.map(p => p.text).join("\n\n");
+      const vision = options.vision || "Tu gardes le ton, les personnages et les lieux existants, sans rien ajouter.";
+
+      if (options.format === "roman") {
+        return `Version roman — ${vision}\n\n${content
+          .split("\n")
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map(line => "« " + line + " »")
+          .join("\n\n")}`;
+      }
+
+      if (options.format === "film" || options.format === "serie") {
+        return `Scénario ${options.format === "film" ? "film" : "série"} — ${vision}\n\n${content
+          .split("\n")
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map((line, i) => `${i + 1}. ${line}`)
+          .join("\n\n")}`;
+      }
+
+      if (options.format === "video") {
+        return `Script vidéo — ${vision}\n\n${content
+          .split("\n")
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map((line, i) => `[Plan ${i + 1}] ${line}`)
+          .join("\n\n")}`;
+      }
+
+      if (options.format === "bd") {
+        return `Bande dessinée — ${vision}\n\n${content
+          .split("\n")
+          .map(line => line.trim())
+          .filter(Boolean)
+          .map((line, i) => `Case ${i + 1}: ${line}`)
+          .join("\n\n")}`;
+      }
+
+      return `Version adaptée — ${vision}\n\n${content}`;
+    }
+
+    function authorizeIA() {
+      state.iaAuthorized = true;
+      $("ia-authorize-btn").textContent = "IA autorisée";
+      $("ia-authorize-btn").style.background = "linear-gradient(135deg, rgba(52,211,153,.25), rgba(56,189,248,.2))";
+      $("ia-authorize-btn").style.borderColor = "rgba(52,211,153,.4)";
+    }
+
+    function handleTransformSubmit(e) {
+      e.preventDefault();
+      const project = getActiveProject();
+      if (!project) return;
+
+      if (!state.iaAuthorized) {
+        $("transform-output").textContent = "Tu dois autoriser l’IA avant de lancer une transformation.";
+        return;
+      }
+
+      const format = $("transform-format").value;
+      const vision = $("transform-vision").value.trim();
+      const noNew = $("no-new-elements").checked;
+      const selectedIds = [...$("transform-passage-select").selectedOptions].map(opt => opt.value);
+
+      const output = generateTransformText(project, {
+        ids: selectedIds,
+        format,
+        vision: `${vision || "Ton et style d'origine conservés"}${noNew ? " • sans ajouts de nouveaux éléments" : ""}`
+      });
+
+      $("transform-output").textContent = output;
+      saveProjects();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProjects();
+      render();
+
+      $("new-project-btn").addEventListener("click", addProject);
+      $("add-passage-btn").addEventListener("click", addPassage);
+      $("delete-project-btn").addEventListener("click", deleteProject);
+
+      $("project-title").addEventListener("input", (e) => {
+        updateProjectTitle(e.target.value);
+      });
+
+      $("ia-authorize-btn").addEventListener("click", authorizeIA);
+      $("transform-form").addEventListener("submit", handleTransformSubmit);
+
+      $("transform-format").addEventListener("change", () => {
+        const project = getActiveProject();
+        if (!project) return;
+        updateTransformSelect(project);
+      });
+    });
+  </script>
+</body>
+</html>
